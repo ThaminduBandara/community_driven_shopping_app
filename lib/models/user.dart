@@ -14,7 +14,7 @@ class User {
     required this.passwordHash,
   });
 
-  static const String baseUrl = "http://localhost:9090/api/users";
+  static const String baseUrl = "http://localhost:8080/api/users";
 
   
   Future<bool> signup() async {
