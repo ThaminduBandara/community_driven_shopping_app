@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/product_provider.dart';
+import '../../providers/auth_provider.dart';
 import '../../models/product_image.dart';
 
 class AddProductScreen extends StatefulWidget {
@@ -51,6 +52,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final authProvider = Provider.of<AuthProvider>(context, listen: false);
+      final userId = authProvider.currentUser?.userId;
+      
+      if (userId == null) {
+        _showError('Please login again');
+        setState(() => _isLoading = false);
+        return;
+      }
+      
       final productProvider = Provider.of<ProductProvider>(context, listen: false);
       
       // Create product images list
@@ -59,7 +69,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
                 imageId: '',
                 productId: '',
                 url: url,
-                uploadedBy: 'current_user', // TODO: Get from auth
+                uploadedBy: userId,
                 timestamp: DateTime.now(),
               ))
           .toList();
@@ -73,7 +83,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         price: double.parse(_priceController.text),
         warranty: int.parse(_warrantyController.text),
         customerService: _customerServiceController.text,
-        addedBy: 'current_user', // TODO: Get from auth
+        addedBy: userId,
         shopName: _shopNameController.text,
         shopAddress: _shopAddressController.text,
         shopTown: _shopTownController.text,

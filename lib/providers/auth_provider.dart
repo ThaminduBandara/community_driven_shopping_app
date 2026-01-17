@@ -39,10 +39,10 @@ class AuthProvider with ChangeNotifier {
       // Call the User.login method
       final user = await User.login(email, password);
       
-      if (user != null) {
+      if (user != null && user.token != null) {
         _currentUser = user;
         _isAuthenticated = true;
-        _token = 'dummy_token_${user.userId}'; // TODO: Get actual token from API
+        _token = user.token;
         
         // Save to SharedPreferences
         final prefs = await SharedPreferences.getInstance();
@@ -71,6 +71,22 @@ class AuthProvider with ChangeNotifier {
         passwordHash: password,
       );
       final success = await user.signup();
+      
+      if (success && user.token != null) {
+        _currentUser = user;
+        _isAuthenticated = true;
+        _token = user.token;
+        
+        // Save to SharedPreferences
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('token', _token!);
+        await prefs.setString('userId', user.userId);
+        await prefs.setString('username', user.username);
+        await prefs.setString('email', user.email);
+        
+        notifyListeners();
+      }
+      
       return success;
     } catch (e) {
       debugPrint('Signup error: $e');
