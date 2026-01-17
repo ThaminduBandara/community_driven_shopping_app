@@ -46,6 +46,8 @@ class ProductProvider with ChangeNotifier {
   void applyFilters({
     String? type,
     String? brand,
+    String? model,
+    String? town,
     double? minPrice,
     double? maxPrice,
     int? minWarranty,
@@ -63,6 +65,18 @@ class ProductProvider with ChangeNotifier {
     if (brand != null && brand.isNotEmpty) {
       _filteredProducts = _filteredProducts
           .where((p) => p.brand.toLowerCase() == brand.toLowerCase())
+          .toList();
+    }
+
+    if (model != null && model.isNotEmpty) {
+      _filteredProducts = _filteredProducts
+          .where((p) => p.model.toLowerCase().contains(model.toLowerCase()))
+          .toList();
+    }
+
+    if (town != null && town.isNotEmpty) {
+      _filteredProducts = _filteredProducts
+          .where((p) => p.shopTown.toLowerCase().contains(town.toLowerCase()))
           .toList();
     }
 
@@ -92,6 +106,7 @@ class ProductProvider with ChangeNotifier {
           _filteredProducts = service.sortByWarranty(_filteredProducts);
           break;
         case 'distance':
+        case 'nearest':
           _filteredProducts = service.sortByDistance(
             _filteredProducts,
             _userLatitude,

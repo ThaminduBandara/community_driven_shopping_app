@@ -18,6 +18,8 @@ class _HomeScreenState extends State<HomeScreen> {
   String _selectedSort = 'price';
   String? _selectedType;
   String? _selectedBrand;
+  String? _selectedModel;
+  String? _selectedTown;
 
   @override
   void initState() {
@@ -37,6 +39,8 @@ class _HomeScreenState extends State<HomeScreen> {
     productProvider.applyFilters(
       type: _selectedType,
       brand: _selectedBrand,
+      model: _selectedModel,
+      town: _selectedTown,
       sortBy: _selectedSort,
     );
   }
@@ -100,10 +104,10 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
                       ChoiceChip(
-                        label: const Text('Distance'),
-                        selected: _selectedSort == 'distance',
+                        label: const Text('Nearest'),
+                        selected: _selectedSort == 'nearest' || _selectedSort == 'distance',
                         onSelected: (selected) {
-                          setModalState(() => _selectedSort = 'distance');
+                          setModalState(() => _selectedSort = 'nearest');
                         },
                       ),
                     ],
@@ -145,6 +149,54 @@ class _HomeScreenState extends State<HomeScreen> {
                         },
                       ),
                     ],
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Model Filter
+                  TextField(
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Model',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      hintText: 'e.g., iPhone 15, XPS 15',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                      prefixIcon: const Icon(Icons.phone_android, color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setModalState(() => _selectedModel = value.isEmpty ? null : value);
+                    },
+                  ),
+                  const SizedBox(height: 16),
+                  
+                  // Town/Location Filter
+                  TextField(
+                    style: const TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Town/City',
+                      labelStyle: const TextStyle(color: Colors.white70),
+                      hintText: 'e.g., Colombo, Kandy',
+                      hintStyle: TextStyle(color: Colors.white.withOpacity(0.3)),
+                      prefixIcon: const Icon(Icons.location_city, color: Colors.white70),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                      ),
+                      enabledBorder: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                        borderSide: BorderSide(color: Colors.white.withOpacity(0.2)),
+                      ),
+                    ),
+                    onChanged: (value) {
+                      setModalState(() => _selectedTown = value.isEmpty ? null : value);
+                    },
                   ),
                   const SizedBox(height: 24),
                   
@@ -431,7 +483,9 @@ class ProductCard extends StatelessWidget {
                         const SizedBox(width: 4),
                         Expanded(
                           child: Text(
-                            product.shopName,
+                            product.distance != null 
+                                ? '${product.shopTown} (${product.distance!.toStringAsFixed(1)} km away)'
+                                : product.shopName,
                             style: const TextStyle(fontSize: 12),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,

@@ -23,6 +23,7 @@ class Product {
   List<Review> reviews;
   double averageRating;
   int reviewCount;
+  double? distance; // Distance from user in km
 
   Product({
     required this.productId,
@@ -43,6 +44,7 @@ class Product {
     this.reviews = const [],
     this.averageRating = 0.0,
     this.reviewCount = 0,
+    this.distance,
   });
 
   static const String baseUrl = "http://localhost:8080/api/products";

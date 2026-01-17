@@ -1,5 +1,18 @@
 const Product = require('../models/Product');
 
+// Helper function to calculate distance between two coordinates (Haversine formula)
+const calculateDistance = (lat1, lon1, lat2, lon2) => {
+  const R = 6371; // Radius of the Earth in km
+  const dLat = (lat2 - lat1) * Math.PI / 180;
+  const dLon = (lon2 - lon1) * Math.PI / 180;
+  const a = 
+    Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+    Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+    Math.sin(dLon / 2) * Math.sin(dLon / 2);
+  const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+  return R * c; // Distance in km
+};
+
 // @desc    Get all products
 // @route   GET /api/products
 // @access  Public
@@ -8,10 +21,15 @@ const getAllProducts = async (req, res) => {
     const {
       category,
       brand,
+      model,
+      town,
       minPrice,
       maxPrice,
       minWarranty,
       sortBy,
+      userLat,
+      userLon,
+      maxDistance,
       page = 1,
       limit = 20,
     } = req.query;
@@ -20,6 +38,8 @@ const getAllProducts = async (req, res) => {
     const query = {};
     if (category) query.category = category;
     if (brand) query.brand = new RegExp(brand, 'i');
+    if (model) query.model = new RegExp(model, 'i');
+    if (town) query.shopTown = new RegExp(town, 'i');
     if (minPrice || maxPrice) {
       query.price = {};
       if (minPrice) query.price.$gte = Number(minPrice);
@@ -27,27 +47,56 @@ const getAllProducts = async (req, res) => {
     }
     if (minWarranty) query.warranty = { $gte: Number(minWarranty) };
 
-    // Build sort
-    let sort = {};
-    switch (sortBy) {
-      case 'price':
-        sort = { price: 1 };
-        break;
-      case 'warranty':
-        sort = { warranty: -1 };
-        break;
-      case 'newest':
-        sort = { createdAt: -1 };
-        break;
-      default:
-        sort = { createdAt: -1 };
-    }
-
-    const products = await Product.find(query)
+    // Fetch products
+    let products = await Product.find(query)
       .populate('addedBy', 'username email')
-      .sort(sort)
       .limit(limit * 1)
       .skip((page - 1) * limit);
+
+    // If user location provided, calculate distances and filter by maxDistance
+    if (userLat && userLon) {
+      const lat = Number(userLat);
+      const lon = Number(userLon);
+      
+      products = products.map(product => {
+        const distance = calculateDistance(lat, lon, product.shopLatitude, product.shopLongitude);
+        return {
+          ...product.toObject(),
+          distance: distance.toFixed(2)
+        };
+      });
+
+      // Filter by max distance if provided
+      if (maxDistance) {
+        products = products.filter(p => Number(p.distance) <= Number(maxDistance));
+      }
+
+      // Sort by distance if requested
+      if (sortBy === 'nearest') {
+        products.sort((a, b) => Number(a.distance) - Number(b.distance));
+      }
+    }
+
+    // Build sort for non-distance sorting
+    if (sortBy && sortBy !== 'nearest') {
+      let sort = {};
+      switch (sortBy) {
+        case 'price':
+          products.sort((a, b) => a.price - b.price);
+          break;
+        case 'warranty':
+          products.sort((a, b) => b.warranty - a.warranty);
+          break;
+        case 'newest':
+          products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+          break;
+        default:
+          products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+      }
+    } else if (!sortBy && !userLat) {
+      // Default sort by newest if no sorting specified
+      products.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
+    }
 
     const count = await Product.countDocuments(query);
 
