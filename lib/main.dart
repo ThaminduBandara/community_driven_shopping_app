@@ -27,24 +27,42 @@ class MyApp extends StatelessWidget {
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
                 seedColor: Colors.deepPurple,
-                brightness: Brightness.light,
+                brightness: Brightness.dark,
               ),
               useMaterial3: true,
-              appBarTheme: const AppBarTheme(
+              scaffoldBackgroundColor: Colors.transparent,
+              appBarTheme: AppBarTheme(
                 centerTitle: true,
-                elevation: 2,
+                elevation: 0,
+                backgroundColor: Colors.white.withOpacity(0.1),
+                scrolledUnderElevation: 0,
               ),
               cardTheme: CardThemeData(
-                elevation: 2,
+                elevation: 0,
+                color: Colors.white.withOpacity(0.1),
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(20),
+                  side: BorderSide(
+                    color: Colors.white.withOpacity(0.2),
+                    width: 1.5,
+                  ),
                 ),
               ),
               inputDecorationTheme: InputDecorationTheme(
                 border: OutlineInputBorder(
-                  borderRadius: BorderRadius.circular(12),
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                ),
+                enabledBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: BorderSide(color: Colors.white.withOpacity(0.3)),
+                ),
+                focusedBorder: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(16),
+                  borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
                 ),
                 filled: true,
+                fillColor: Colors.white.withOpacity(0.05),
               ),
             ),
             home: authProvider.isAuthenticated
