@@ -44,20 +44,40 @@ class _HomeScreenState extends State<HomeScreen> {
   void _showFilterBottomSheet() {
     showModalBottomSheet(
       context: context,
+      backgroundColor: Colors.transparent,
       builder: (context) {
         return StatefulBuilder(
           builder: (context, setModalState) {
-            return Container(
-              padding: const EdgeInsets.all(16),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.stretch,
-                children: [
-                  Text(
-                    'Filter & Sort',
-                    style: Theme.of(context).textTheme.titleLarge,
+            return ClipRRect(
+              borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
+              child: BackdropFilter(
+                filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+                child: Container(
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      begin: Alignment.topLeft,
+                      end: Alignment.bottomRight,
+                      colors: [
+                        const Color(0xFF1a1a2e).withOpacity(0.9),
+                        const Color(0xFF16213e).withOpacity(0.9),
+                      ],
+                    ),
+                    border: Border.all(
+                      color: Colors.white.withOpacity(0.2),
+                      width: 1.5,
+                    ),
+                    borderRadius: const BorderRadius.vertical(top: Radius.circular(30)),
                   ),
-                  const SizedBox(height: 16),
+                  padding: const EdgeInsets.all(16),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    crossAxisAlignment: CrossAxisAlignment.stretch,
+                    children: [
+                      Text(
+                        'Filter & Sort',
+                        style: Theme.of(context).textTheme.titleLarge,
+                      ),
+                      const SizedBox(height: 16),
                   
                   // Sort By
                   Text('Sort By:', style: Theme.of(context).textTheme.titleMedium),
@@ -139,6 +159,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   ),
                 ],
               ),
+              ),
+            ),
             );
           },
         );

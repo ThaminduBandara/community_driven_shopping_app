@@ -37,7 +37,7 @@ class ProductDetailScreen extends StatelessWidget {
             ),
           ),
         ),
-      body: SingleChildScrollView(
+        body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
@@ -214,6 +214,7 @@ class ProductDetailScreen extends StatelessWidget {
           ],
         ),
       ),
+    ),
     );
   }
 
@@ -268,8 +269,6 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         ],
       ),
-    ),
-    ),
     );
   }
 

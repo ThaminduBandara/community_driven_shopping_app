@@ -127,15 +127,25 @@ class _AddProductScreenState extends State<AddProductScreen> {
       context: context,
       builder: (context) {
         final controller = TextEditingController();
-        return AlertDialog(
-          title: const Text('Add Image URL'),
-          content: TextField(
-            controller: controller,
-            decoration: const InputDecoration(
-              labelText: 'Image URL',
-              hintText: 'https://example.com/image.jpg',
+        return BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: AlertDialog(
+            backgroundColor: const Color(0xFF1a1a2e).withOpacity(0.9),
+            shape: RoundedRectangleBorder(
+              borderRadius: BorderRadius.circular(20),
+              side: BorderSide(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
+              ),
             ),
-          ),
+            title: const Text('Add Image URL'),
+            content: TextField(
+              controller: controller,
+              decoration: const InputDecoration(
+                labelText: 'Image URL',
+                hintText: 'https://example.com/image.jpg',
+              ),
+            ),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
@@ -153,6 +163,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
               child: const Text('Add'),
             ),
           ],
+        ),
         );
       },
     );
@@ -462,6 +473,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
           ],
         ),
       ),
+    ),
     );
   }
 }
