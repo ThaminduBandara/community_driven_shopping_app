@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import '../../models/product.dart';
 
@@ -8,10 +9,34 @@ class ProductDetailScreen extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Product Details'),
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1a1a2e),
+            Color(0xFF16213e),
+            Color(0xFF0f3460),
+          ],
+        ),
       ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Product Details'),
+          backgroundColor: Colors.transparent,
+          flexibleSpace: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                ),
+              ),
+            ),
+          ),
+        ),
       body: SingleChildScrollView(
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -243,27 +268,39 @@ class ProductDetailScreen extends StatelessWidget {
           ),
         ],
       ),
+    ),
+    ),
     );
   }
 
   void _showContactDialog(BuildContext context) {
     showDialog(
       context: context,
-      builder: (context) => AlertDialog(
-        title: const Text('Contact Seller'),
-        content: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Text('Shop: ${product.shopName}'),
-            const SizedBox(height: 8),
-            Text('Address: ${product.shopAddress}, ${product.shopTown}'),
-            const SizedBox(height: 16),
-            const Text(
-              'Contact seller directly at the shop location for more information.',
+      builder: (context) => BackdropFilter(
+        filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+        child: AlertDialog(
+          backgroundColor: const Color(0xFF1a1a2e).withOpacity(0.9),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(20),
+            side: BorderSide(
+              color: Colors.white.withOpacity(0.2),
+              width: 1.5,
             ),
-          ],
-        ),
+          ),
+          title: const Text('Contact Seller'),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Shop: ${product.shopName}'),
+              const SizedBox(height: 8),
+              Text('Address: ${product.shopAddress}, ${product.shopTown}'),
+              const SizedBox(height: 16),
+              const Text(
+                'Contact seller directly at the shop location for more information.',
+              ),
+            ],
+          ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
@@ -281,6 +318,7 @@ class ProductDetailScreen extends StatelessWidget {
             label: const Text('View on Map'),
           ),
         ],
+      ),
       ),
     );
   }
