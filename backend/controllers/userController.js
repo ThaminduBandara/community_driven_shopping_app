@@ -13,10 +13,11 @@ const generateToken = (id) => {
 // @access  Public
 const signup = async (req, res) => {
   try {
-    const { username, email, passwordHash } = req.body;
+    const { username, email, password, passwordHash } = req.body;
+    const pwd = password || passwordHash;
 
     // Validation
-    if (!username || !email || !passwordHash) {
+    if (!username || !email || !pwd) {
       return res.status(400).json({ message: 'Please provide all fields' });
     }
 
@@ -30,7 +31,7 @@ const signup = async (req, res) => {
     const user = await User.create({
       username,
       email,
-      passwordHash,
+      passwordHash: pwd,
     });
 
     if (user) {
