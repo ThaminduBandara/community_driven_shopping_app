@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'product_image.dart';
 
 class Product {
   String productId;
@@ -16,6 +17,7 @@ class Product {
   String shopTown;
   double shopLatitude;
   double shopLongitude;
+  List<ProductImage> images;
 
   Product({
     required this.productId,
@@ -32,6 +34,7 @@ class Product {
     required this.shopTown,
     required this.shopLatitude,
     required this.shopLongitude,
+    this.images = const [],
   });
 
   static const String baseUrl = "http://localhost:8080/api/products";
@@ -51,6 +54,7 @@ class Product {
         "shopTown": shopTown,
         "shopLatitude": shopLatitude,
         "shopLongitude": shopLongitude,
+        "images": images.map((img) => img.url).toList(),
       };
 
   // Add product
@@ -104,6 +108,17 @@ class Product {
         shopTown: json['shopTown'],
         shopLatitude: json['shopLatitude'].toDouble(),
         shopLongitude: json['shopLongitude'].toDouble(),
+        images: json['images'] != null
+            ? (json['images'] as List)
+                .map((img) => ProductImage(
+                      imageId: '',
+                      productId: json['productId'],
+                      url: img is String ? img : img['url'],
+                      uploadedBy: '',
+                      timestamp: DateTime.now(),
+                    ))
+                .toList()
+            : [],
       );
 }
 
