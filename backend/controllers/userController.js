@@ -16,15 +16,35 @@ const signup = async (req, res) => {
     const { username, email, password, passwordHash } = req.body;
     const pwd = password || passwordHash;
 
-    // Validation
+    // Comprehensive validation
     if (!username || !email || !pwd) {
-      return res.status(400).json({ message: 'Please provide all fields' });
+      return res.status(400).json({ 
+        message: 'Please provide all required fields',
+        fields: { username: !username, email: !email, password: !pwd }
+      });
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return res.status(400).json({ message: 'Please provide a valid email address' });
+    }
+
+    // Validate username length
+    if (username.length < 3 || username.length > 30) {
+      return res.status(400).json({ message: 'Username must be between 3 and 30 characters' });
+    }
+
+    // Validate password strength
+    if (pwd.length < 6) {
+      return res.status(400).json({ message: 'Password must be at least 6 characters long' });
     }
 
     // Check if user exists
     const userExists = await User.findOne({ $or: [{ email }, { username }] });
     if (userExists) {
-      return res.status(400).json({ message: 'User already exists' });
+      const field = userExists.email === email ? 'email' : 'username';
+      return res.status(400).json({ message: `User with this ${field} already exists` });
     }
 
     // Create user

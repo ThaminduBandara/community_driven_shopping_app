@@ -1,6 +1,7 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../models/product.dart';
@@ -20,18 +21,100 @@ class _HomeScreenState extends State<HomeScreen> {
   String? _selectedBrand;
   String? _selectedModel;
   String? _selectedTown;
+  bool _locationPermissionGranted = false;
 
   @override
   void initState() {
     super.initState();
     WidgetsBinding.instance.addPostFrameCallback((_) {
+      _requestLocationPermission();
       _loadProducts();
     });
+  }
+
+  Future<void> _requestLocationPermission() async {
+    bool serviceEnabled;
+    LocationPermission permission;
+
+    // Check if location services are enabled
+    serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location services are disabled. Enable them for nearest sorting.')),
+        );
+      }
+      return;
+    }
+
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(content: Text('Location permission denied. Nearest sorting unavailable.')),
+          );
+        }
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location permission permanently denied. Enable in settings for nearest sorting.')),
+        );
+      }
+      return;
+    }
+
+    // Permission granted, get location
+    try {
+      Position position = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high,
+      );
+      
+      final productProvider = Provider.of<ProductProvider>(context, listen: false);
+      productProvider.setUserLocation(position.latitude, position.longitude);
+      
+      setState(() {
+        _locationPermissionGranted = true;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Location detected! You can now sort by nearest.')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to get location: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _loadProducts() async {
     final productProvider = Provider.of<ProductProvider>(context, listen: false);
     await productProvider.fetchProducts();
+    // Apply default sort (price)
+    _applyFiltersAndSort();
+  }
+
+  String _getSortLabel() {
+    switch (_selectedSort) {
+      case 'price':
+        return 'Sorted by: Lowest Price';
+      case 'warranty':
+        return 'Sorted by: Highest Warranty';
+      case 'nearest':
+      case 'distance':
+        return 'Sorted by: Nearest Location';
+      default:
+        return 'Sorted by: Lowest Price';
+    }
   }
 
   void _applyFiltersAndSort() {
@@ -84,31 +167,67 @@ class _HomeScreenState extends State<HomeScreen> {
                       const SizedBox(height: 16),
                   
                   // Sort By
-                  Text('Sort By:', style: Theme.of(context).textTheme.titleMedium),
+                  Row(
+                    children: [
+                      Text('Sort By (Choose One):', style: Theme.of(context).textTheme.titleMedium),
+                      const Spacer(),
+                      if (!_locationPermissionGranted)
+                        const Tooltip(
+                          message: 'Enable location for nearest sort',
+                          child: Icon(Icons.info_outline, size: 16, color: Colors.amber),
+                        ),
+                    ],
+                  ),
                   const SizedBox(height: 8),
                   Wrap(
                     spacing: 8,
                     children: [
                       ChoiceChip(
-                        label: const Text('Price'),
+                        label: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.attach_money, size: 16),
+                            SizedBox(width: 4),
+                            Text('Lowest Price'),
+                          ],
+                        ),
                         selected: _selectedSort == 'price',
                         onSelected: (selected) {
                           setModalState(() => _selectedSort = 'price');
                         },
                       ),
                       ChoiceChip(
-                        label: const Text('Warranty'),
+                        label: const Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Icon(Icons.verified_user, size: 16),
+                            SizedBox(width: 4),
+                            Text('Highest Warranty'),
+                          ],
+                        ),
                         selected: _selectedSort == 'warranty',
                         onSelected: (selected) {
                           setModalState(() => _selectedSort = 'warranty');
                         },
                       ),
                       ChoiceChip(
-                        label: const Text('Nearest'),
+                        label: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.location_on, size: 16),
+                            const SizedBox(width: 4),
+                            const Text('Nearest'),
+                            if (!_locationPermissionGranted) ...[
+                              const SizedBox(width: 4),
+                              const Icon(Icons.lock, size: 12),
+                            ],
+                          ],
+                        ),
                         selected: _selectedSort == 'nearest' || _selectedSort == 'distance',
-                        onSelected: (selected) {
+                        onSelected: _locationPermissionGranted ? (selected) {
                           setModalState(() => _selectedSort = 'nearest');
-                        },
+                        } : null,
+                        backgroundColor: _locationPermissionGranted ? null : Colors.grey.withOpacity(0.3),
                       ),
                     ],
                   ),
@@ -240,7 +359,16 @@ class _HomeScreenState extends State<HomeScreen> {
       child: Scaffold(
         backgroundColor: Colors.transparent,
         appBar: AppBar(
-          title: const Text('Community Shopping'),
+          title: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text('Community Shopping'),
+              Text(
+                _getSortLabel(),
+                style: const TextStyle(fontSize: 12, fontWeight: FontWeight.normal),
+              ),
+            ],
+          ),
           flexibleSpace: ClipRect(
             child: BackdropFilter(
               filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
@@ -255,6 +383,7 @@ class _HomeScreenState extends State<HomeScreen> {
             IconButton(
               icon: const Icon(Icons.filter_list),
               onPressed: _showFilterBottomSheet,
+              tooltip: 'Filter & Sort',
             ),
             IconButton(
               icon: const Icon(Icons.logout),
@@ -388,29 +517,92 @@ class ProductCard extends StatelessWidget {
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
               // Product Image
-              ClipRRect(
-                borderRadius: BorderRadius.circular(8),
-                child: product.images.isNotEmpty
-                    ? Image.network(
-                        product.images[0].url,
-                        width: 80,
-                        height: 80,
-                        fit: BoxFit.cover,
-                        errorBuilder: (context, error, stackTrace) {
-                          return Container(
+              Stack(
+                children: [
+                  ClipRRect(
+                    borderRadius: BorderRadius.circular(8),
+                    child: product.images.isNotEmpty
+                        ? Image.network(
+                            product.images[0].url,
                             width: 80,
                             height: 80,
-                            color: Colors.grey[300],
-                            child: const Icon(Icons.image_not_supported),
-                          );
-                        },
-                      )
-                    : Container(
-                        width: 80,
-                        height: 80,
-                        color: Colors.grey[300],
-                        child: const Icon(Icons.image, size: 40),
+                            fit: BoxFit.cover,
+                            loadingBuilder: (context, child, loadingProgress) {
+                              if (loadingProgress == null) return child;
+                              return Container(
+                                width: 80,
+                                height: 80,
+                                color: Colors.grey[800],
+                                child: Center(
+                                  child: CircularProgressIndicator(
+                                    value: loadingProgress.expectedTotalBytes != null
+                                        ? loadingProgress.cumulativeBytesLoaded /
+                                            loadingProgress.expectedTotalBytes!
+                                        : null,
+                                    color: Colors.white,
+                                    strokeWidth: 2,
+                                  ),
+                                ),
+                              );
+                            },
+                            errorBuilder: (context, error, stackTrace) {
+                              return Container(
+                                width: 80,
+                                height: 80,
+                                decoration: BoxDecoration(
+                                  color: Colors.grey[800],
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: const Icon(
+                                  Icons.image_not_supported,
+                                  color: Colors.white54,
+                                  size: 32,
+                                ),
+                              );
+                            },
+                          )
+                        : Container(
+                            width: 80,
+                            height: 80,
+                            decoration: BoxDecoration(
+                              color: Colors.grey[800],
+                              borderRadius: BorderRadius.circular(8),
+                            ),
+                            child: const Icon(
+                              Icons.image,
+                              size: 40,
+                              color: Colors.white54,
+                            ),
+                          ),
+                  ),
+                  if (product.images.length > 1)
+                    Positioned(
+                      top: 4,
+                      right: 4,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                        decoration: BoxDecoration(
+                          color: Colors.black.withOpacity(0.7),
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(Icons.photo_library, size: 10, color: Colors.white),
+                            const SizedBox(width: 2),
+                            Text(
+                              '${product.images.length}',
+                              style: const TextStyle(
+                                color: Colors.white,
+                                fontSize: 10,
+                                fontWeight: FontWeight.bold,
+                              ),
+                            ),
+                          ],
+                        ),
                       ),
+                    ),
+                ],
               ),
               const SizedBox(width: 12),
               

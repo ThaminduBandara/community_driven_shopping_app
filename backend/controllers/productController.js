@@ -151,9 +151,89 @@ const createProduct = async (req, res) => {
       images,
     } = req.body;
 
-    // Validation
-    if (!category || !brand || !model || !name || !price || !warranty || !shopName || !shopAddress || !shopTown || shopLatitude === undefined || shopLongitude === undefined) {
-      return res.status(400).json({ message: 'Please provide all required fields' });
+    // Comprehensive validation
+    const errors = [];
+
+    if (!category || category.trim() === '') {
+      errors.push('Category is required');
+    }
+    if (!brand || brand.trim() === '') {
+      errors.push('Brand is required');
+    } else if (brand.length > 100) {
+      errors.push('Brand name must be less than 100 characters');
+    }
+    if (!model || model.trim() === '') {
+      errors.push('Model is required');
+    } else if (model.length > 100) {
+      errors.push('Model name must be less than 100 characters');
+    }
+    if (!name || name.trim() === '') {
+      errors.push('Product name is required');
+    } else if (name.length < 3) {
+      errors.push('Product name must be at least 3 characters');
+    } else if (name.length > 200) {
+      errors.push('Product name must be less than 200 characters');
+    }
+    
+    if (!price) {
+      errors.push('Price is required');
+    } else if (isNaN(price) || Number(price) <= 0) {
+      errors.push('Price must be a positive number');
+    } else if (Number(price) > 100000000) {
+      errors.push('Price is too high');
+    }
+    
+    if (!warranty) {
+      errors.push('Warranty is required');
+    } else if (isNaN(warranty) || Number(warranty) < 0) {
+      errors.push('Warranty must be a non-negative number');
+    } else if (Number(warranty) > 120) {
+      errors.push('Warranty period cannot exceed 120 months');
+    }
+
+    if (!shopName || shopName.trim() === '') {
+      errors.push('Shop name is required');
+    } else if (shopName.length > 200) {
+      errors.push('Shop name must be less than 200 characters');
+    }
+    
+    if (!shopAddress || shopAddress.trim() === '') {
+      errors.push('Shop address is required');
+    } else if (shopAddress.length > 500) {
+      errors.push('Shop address must be less than 500 characters');
+    }
+    
+    if (!shopTown || shopTown.trim() === '') {
+      errors.push('Shop town is required');
+    } else if (shopTown.length > 100) {
+      errors.push('Shop town must be less than 100 characters');
+    }
+    
+    if (shopLatitude === undefined || shopLatitude === null || shopLatitude === '') {
+      errors.push('Shop latitude is required');
+    } else if (isNaN(shopLatitude) || Number(shopLatitude) < -90 || Number(shopLatitude) > 90) {
+      errors.push('Shop latitude must be between -90 and 90');
+    }
+    
+    if (shopLongitude === undefined || shopLongitude === null || shopLongitude === '') {
+      errors.push('Shop longitude is required');
+    } else if (isNaN(shopLongitude) || Number(shopLongitude) < -180 || Number(shopLongitude) > 180) {
+      errors.push('Shop longitude must be between -180 and 180');
+    }
+
+    if (images && !Array.isArray(images)) {
+      errors.push('Images must be an array');
+    } else if (images && images.length > 10) {
+      errors.push('Cannot upload more than 10 images');
+    } else if (images && images.some(img => !img.url || typeof img.url !== 'string')) {
+      errors.push('Invalid image format');
+    }
+
+    if (errors.length > 0) {
+      return res.status(400).json({ 
+        message: 'Validation failed', 
+        errors 
+      });
     }
 
     const product = await Product.create({
