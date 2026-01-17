@@ -1,3 +1,4 @@
+import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../../providers/auth_provider.dart';
@@ -150,23 +151,46 @@ class _HomeScreenState extends State<HomeScreen> {
     final authProvider = Provider.of<AuthProvider>(context);
     final productProvider = Provider.of<ProductProvider>(context);
 
-    return Scaffold(
-      appBar: AppBar(
-        title: const Text('Community Shopping'),
-        actions: [
-          IconButton(
-            icon: const Icon(Icons.filter_list),
-            onPressed: _showFilterBottomSheet,
-          ),
-          IconButton(
-            icon: const Icon(Icons.logout),
-            onPressed: () {
-              authProvider.logout();
-              Navigator.of(context).pushReplacementNamed('/login');
-            },
-          ),
-        ],
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+          colors: [
+            Color(0xFF1a1a2e),
+            Color(0xFF16213e),
+            Color(0xFF0f3460),
+          ],
+        ),
       ),
+      child: Scaffold(
+        backgroundColor: Colors.transparent,
+        appBar: AppBar(
+          title: const Text('Community Shopping'),
+          flexibleSpace: ClipRect(
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+              child: Container(
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.1),
+                ),
+              ),
+            ),
+          ),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.filter_list),
+              onPressed: _showFilterBottomSheet,
+            ),
+            IconButton(
+              icon: const Icon(Icons.logout),
+              onPressed: () {
+                authProvider.logout();
+                Navigator.of(context).pushReplacementNamed('/login');
+              },
+            ),
+          ],
+        ),
       body: RefreshIndicator(
         onRefresh: _loadProducts,
         child: productProvider.isLoading
@@ -206,17 +230,41 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                   ),
       ),
-      floatingActionButton: FloatingActionButton.extended(
-        onPressed: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => const AddProductScreen(),
+      floatingActionButton: ClipRRect(
+        borderRadius: BorderRadius.circular(30),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [
+                  Colors.deepPurple.withOpacity(0.7),
+                  Colors.deepPurpleAccent.withOpacity(0.7),
+                ],
+              ),
+              borderRadius: BorderRadius.circular(30),
+              border: Border.all(
+                color: Colors.white.withOpacity(0.2),
+                width: 1.5,
+              ),
             ),
-          );
-        },
-        icon: const Icon(Icons.add),
-        label: const Text('Add Product'),
+            child: FloatingActionButton.extended(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const AddProductScreen(),
+                  ),
+                );
+              },
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              icon: const Icon(Icons.add),
+              label: const Text('Add Product'),
+            ),
+          ),
+        ),
       ),
+    ),
     );
   }
 }
@@ -228,16 +276,38 @@ class ProductCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return Card(
+    return Container(
       margin: const EdgeInsets.symmetric(vertical: 8, horizontal: 4),
-      child: InkWell(
-        onTap: () {
-          Navigator.of(context).push(
-            MaterialPageRoute(
-              builder: (context) => ProductDetailScreen(product: product),
+      decoration: BoxDecoration(
+        borderRadius: BorderRadius.circular(20),
+        border: Border.all(
+          color: Colors.white.withOpacity(0.2),
+          width: 1.5,
+        ),
+      ),
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(20),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [
+                  Colors.white.withOpacity(0.1),
+                  Colors.white.withOpacity(0.05),
+                ],
+              ),
             ),
-          );
-        },
+            child: InkWell(
+              onTap: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => ProductDetailScreen(product: product),
+                  ),
+                );
+              },
         child: Padding(
           padding: const EdgeInsets.all(12),
           child: Row(
@@ -344,7 +414,8 @@ class ProductCard extends StatelessWidget {
             ],
           ),
         ),
-      ),
+      ),      ),
+    ),    ),
     );
   }
 }
