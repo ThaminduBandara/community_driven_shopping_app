@@ -2,6 +2,7 @@ import 'dart:convert';
 import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import 'product_image.dart';
+import 'review.dart';
 
 class Product {
   String productId;
@@ -19,6 +20,9 @@ class Product {
   double shopLatitude;
   double shopLongitude;
   List<ProductImage> images;
+  List<Review> reviews;
+  double averageRating;
+  int reviewCount;
 
   Product({
     required this.productId,
@@ -36,6 +40,9 @@ class Product {
     required this.shopLatitude,
     required this.shopLongitude,
     this.images = const [],
+    this.reviews = const [],
+    this.averageRating = 0.0,
+    this.reviewCount = 0,
   });
 
   static const String baseUrl = "http://localhost:8080/api/products";
@@ -143,6 +150,49 @@ class Product {
                     ))
                 .toList()
             : [],
+        reviews: json['reviews'] != null && json['reviews'] is List
+            ? (json['reviews'] as List)
+                .map((reviewJson) => Review.fromJson(reviewJson))
+                .toList()
+            : [],
+        averageRating: (json['averageRating'] ?? 0).toDouble(),
+        reviewCount: json['reviewCount'] ?? 0,
       );
+
+  // Add review to product
+  static Future<bool> addReview(String productId, double rating, String comment, {double? serviceRating}) async {
+    final prefs = await SharedPreferences.getInstance();
+    final token = prefs.getString('token');
+    
+    if (token == null) return false;
+    
+    final response = await http.post(
+      Uri.parse("$baseUrl/$productId/reviews"),
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer $token",
+      },
+      body: jsonEncode({
+        "rating": rating,
+        "comment": comment,
+        if (serviceRating != null) "serviceRating": serviceRating,
+      }),
+    );
+    return response.statusCode == 200 || response.statusCode == 201;
+  }
+
+  // Get reviews for product
+  static Future<Map<String, dynamic>> getReviews(String productId) async {
+    final response = await http.get(Uri.parse("$baseUrl/$productId/reviews"));
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      return {
+        'reviews': (data['reviews'] as List).map((json) => Review.fromJson(json)).toList(),
+        'averageRating': (data['averageRating'] ?? 0).toDouble(),
+        'reviewCount': data['reviewCount'] ?? 0,
+      };
+    }
+    return {'reviews': [], 'averageRating': 0.0, 'reviewCount': 0};
+  }
 }
 

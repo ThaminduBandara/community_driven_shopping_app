@@ -185,10 +185,89 @@ const deleteProduct = async (req, res) => {
   }
 };
 
+// @desc    Add review to product
+// @route   POST /api/products/:id/reviews
+// @access  Private
+const addReview = async (req, res) => {
+  try {
+    const { rating, comment, serviceRating } = req.body;
+
+    // Validation
+    if (!rating || !comment) {
+      return res.status(400).json({ message: 'Please provide rating and comment' });
+    }
+
+    if (rating < 1 || rating > 5) {
+      return res.status(400).json({ message: 'Rating must be between 1 and 5' });
+    }
+
+    const product = await Product.findById(req.params.id);
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    // Check if user already reviewed
+    const alreadyReviewed = product.reviews.find(
+      (review) => review.userId.toString() === req.user._id.toString()
+    );
+
+    if (alreadyReviewed) {
+      return res.status(400).json({ message: 'You have already reviewed this product' });
+    }
+
+    // Add review
+    const review = {
+      userId: req.user._id,
+      username: req.user.username,
+      rating: Number(rating),
+      comment,
+      serviceRating: serviceRating ? Number(serviceRating) : undefined,
+      createdAt: Date.now(),
+    };
+
+    product.reviews.push(review);
+    product.reviewCount = product.reviews.length;
+    product.averageRating = 
+      product.reviews.reduce((acc, item) => item.rating + acc, 0) / product.reviews.length;
+
+    await product.save();
+
+    res.status(201).json({ message: 'Review added', product });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
+// @desc    Get reviews for a product
+// @route   GET /api/products/:id/reviews
+// @access  Public
+const getReviews = async (req, res) => {
+  try {
+    const product = await Product.findById(req.params.id).select('reviews averageRating reviewCount');
+
+    if (!product) {
+      return res.status(404).json({ message: 'Product not found' });
+    }
+
+    res.json({
+      reviews: product.reviews,
+      averageRating: product.averageRating,
+      reviewCount: product.reviewCount,
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   getAllProducts,
   getProductById,
   createProduct,
   updateProduct,
   deleteProduct,
+  addReview,
+  getReviews,
 };

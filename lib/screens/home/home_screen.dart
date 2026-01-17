@@ -401,6 +401,18 @@ class ProductCard extends StatelessWidget {
                       ],
                     ),
                     const SizedBox(height: 4),
+                    if (product.reviewCount > 0)
+                      Row(
+                        children: [
+                          const Icon(Icons.star, size: 14, color: Colors.amber),
+                          const SizedBox(width: 4),
+                          Text(
+                            '${product.averageRating.toStringAsFixed(1)} (${product.reviewCount})',
+                            style: const TextStyle(fontSize: 12),
+                          ),
+                        ],
+                      ),
+                    if (product.reviewCount > 0) const SizedBox(height: 4),
                     Row(
                       children: [
                         const Icon(Icons.verified_user,
