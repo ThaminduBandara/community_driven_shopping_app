@@ -16,7 +16,6 @@ class ErrorBoundary extends StatefulWidget {
 
 class _ErrorBoundaryState extends State<ErrorBoundary> {
   Object? _error;
-  StackTrace? _stackTrace;
 
   @override
   void initState() {
@@ -24,7 +23,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
     FlutterError.onError = (FlutterErrorDetails details) {
       setState(() {
         _error = details.exception;
-        _stackTrace = details.stack;
       });
       widget.onError?.call(details.exception, details.stack ?? StackTrace.current);
     };
@@ -33,7 +31,6 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   void _reset() {
     setState(() {
       _error = null;
-      _stackTrace = null;
     });
   }
 

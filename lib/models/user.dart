@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'package:http/http.dart' as http;
+import 'package:shared_preferences/shared_preferences.dart';
 
 class User {
   String userId;
@@ -39,7 +40,7 @@ class User {
     return false;
   }
 
-  // Login
+
   static Future<User?> login(String email, String password) async {
     final response = await http.post(
       Uri.parse("$baseUrl/login"),
@@ -58,6 +59,37 @@ class User {
       );
     } else {
       return null;
+    }
+  }
+
+
+  Future<bool> updateProfile() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final token = prefs.getString('token');
+
+      final response = await http.put(
+        Uri.parse("$baseUrl/$userId"),
+        headers: {
+          "Content-Type": "application/json",
+          if (token != null) "Authorization": "Bearer $token",
+        },
+        body: jsonEncode({
+          "username": username,
+          "email": email,
+        }),
+      );
+
+      if (response.statusCode == 200) {
+      
+        await prefs.setString('username', username);
+        await prefs.setString('email', email);
+        return true;
+      }
+      return false;
+    } catch (e) {
+      print('Error updating profile: $e');
+      return false;
     }
   }
 }

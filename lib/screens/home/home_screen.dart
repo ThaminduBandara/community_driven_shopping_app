@@ -2,11 +2,11 @@ import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:geolocator/geolocator.dart';
-import '../../providers/auth_provider.dart';
 import '../../providers/product_provider.dart';
 import '../../models/product.dart';
 import 'product_detail_screen.dart';
 import 'add_product_screen.dart';
+import 'profile_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -341,7 +341,6 @@ class _HomeScreenState extends State<HomeScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final authProvider = Provider.of<AuthProvider>(context);
     final productProvider = Provider.of<ProductProvider>(context);
 
     return Container(
@@ -386,11 +385,15 @@ class _HomeScreenState extends State<HomeScreen> {
               tooltip: 'Filter & Sort',
             ),
             IconButton(
-              icon: const Icon(Icons.logout),
+              icon: const Icon(Icons.person),
               onPressed: () {
-                authProvider.logout();
-                Navigator.of(context).pushReplacementNamed('/login');
+                Navigator.of(context).push(
+                  MaterialPageRoute(
+                    builder: (context) => const ProfileScreen(),
+                  ),
+                );
               },
+              tooltip: 'Profile',
             ),
           ],
         ),
