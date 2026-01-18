@@ -104,4 +104,9 @@ class AuthProvider with ChangeNotifier {
     
     notifyListeners();
   }
+
+  void updateLocalUser(User user) {
+    _currentUser = user;
+    notifyListeners();
+  }
 }

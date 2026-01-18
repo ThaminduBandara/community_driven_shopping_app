@@ -148,7 +148,7 @@ const createProduct = async (req, res) => {
       shopTown,
       shopLatitude,
       shopLongitude,
-      images,
+      imageUrls,
     } = req.body;
 
     // Comprehensive validation
@@ -221,12 +221,44 @@ const createProduct = async (req, res) => {
       errors.push('Shop longitude must be between -180 and 180');
     }
 
-    if (images && !Array.isArray(images)) {
-      errors.push('Images must be an array');
-    } else if (images && images.length > 10) {
+    // Process images - combine uploaded files and URL images
+    const images = [];
+    
+    // Add uploaded files as images
+    if (req.files && req.files.length > 0) {
+      const baseUrl = `${req.protocol}://${req.get('host')}`;
+      req.files.forEach(file => {
+        images.push({
+          url: `${baseUrl}/uploads/${file.filename}`,
+          uploadedBy: req.user._id,
+          timestamp: new Date(),
+        });
+      });
+    }
+    
+    // Add URL-based images if provided
+    if (imageUrls) {
+      try {
+        const urlImages = JSON.parse(imageUrls);
+        if (Array.isArray(urlImages)) {
+          urlImages.forEach(url => {
+            images.push({
+              url: url,
+              uploadedBy: req.user._id,
+              timestamp: new Date(),
+            });
+          });
+        }
+      } catch (e) {
+        // imageUrls is not valid JSON, skip
+      }
+    }
+
+    // Validate images
+    if (images.length === 0) {
+      errors.push('At least one image is required');
+    } else if (images.length > 10) {
       errors.push('Cannot upload more than 10 images');
-    } else if (images && images.some(img => !img.url || typeof img.url !== 'string')) {
-      errors.push('Invalid image format');
     }
 
     if (errors.length > 0) {
@@ -250,7 +282,7 @@ const createProduct = async (req, res) => {
       shopTown,
       shopLatitude,
       shopLongitude,
-      images: images || [],
+      images: images,
     });
 
     res.status(201).json(product);

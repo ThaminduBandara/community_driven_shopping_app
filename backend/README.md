@@ -165,15 +165,15 @@ JWT_EXPIRE=7d
 ```
 
 ## Features
-✅ User authentication (signup/login)
-✅ JWT token-based auth
-✅ Product CRUD operations
-✅ Filter by category, brand, price
-✅ Sort by price, warranty, newest
-✅ Pagination
-✅ User ownership validation
-✅ Password hashing with bcrypt
-✅ MongoDB indexes for performance
+ User authentication (signup/login)
+ JWT token-based auth
+ Product CRUD operations
+ Filter by category, brand, price
+ Sort by price, warranty, newest
+ Pagination
+ User ownership validation
+ Password hashing with bcrypt
+ MongoDB indexes for performance
 
 ## Status
-🟢 Backend MVP Complete and Ready!
+ Backend MVP Complete and Ready!

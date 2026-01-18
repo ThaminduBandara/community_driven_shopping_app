@@ -120,8 +120,74 @@ const getUserProfile = async (req, res) => {
   }
 };
 
+// @desc    Update user profile
+// @route   PUT /api/users/:id
+// @access  Private
+const updateProfile = async (req, res) => {
+  try {
+    const { username, email } = req.body;
+    const userId = req.params.id;
+
+    // Validation
+    if (!username && !email) {
+      return res.status(400).json({ message: 'Please provide at least one field to update' });
+    }
+
+    // Find user
+    const user = await User.findById(userId);
+    if (!user) {
+      return res.status(404).json({ message: 'User not found' });
+    }
+
+    // Validate email format if provided
+    if (email) {
+      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+      if (!emailRegex.test(email)) {
+        return res.status(400).json({ message: 'Please provide a valid email address' });
+      }
+
+      // Check if email already exists for another user
+      const emailExists = await User.findOne({ email, _id: { $ne: userId } });
+      if (emailExists) {
+        return res.status(400).json({ message: 'Email is already in use' });
+      }
+
+      user.email = email;
+    }
+
+    // Validate username length if provided
+    if (username) {
+      if (username.length < 3 || username.length > 30) {
+        return res.status(400).json({ message: 'Username must be between 3 and 30 characters' });
+      }
+
+      // Check if username already exists for another user
+      const usernameExists = await User.findOne({ username, _id: { $ne: userId } });
+      if (usernameExists) {
+        return res.status(400).json({ message: 'Username is already taken' });
+      }
+
+      user.username = username;
+    }
+
+    // Save updated user
+    await user.save();
+
+    res.json({
+      userId: user._id,
+      username: user.username,
+      email: user.email,
+      message: 'Profile updated successfully',
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
+
 module.exports = {
   signup,
   login,
   getUserProfile,
+  updateProfile,
 };

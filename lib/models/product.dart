@@ -1,4 +1,6 @@
 import 'dart:convert';
+import 'dart:io';
+import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 import '../utils/api_client.dart';
 import 'product_image.dart';
@@ -73,16 +75,68 @@ class Product {
       final prefs = await SharedPreferences.getInstance();
       final token = prefs.getString('token');
       
-      final response = await ApiClient.post(
-        baseUrl,
-        headers: {
-          "Content-Type": "application/json",
-          if (token != null) "Authorization": "Bearer $token",
-        },
-        body: jsonEncode(toJson()),
-      );
-      return response.statusCode == 200 || response.statusCode == 201;
+      // Check if we have file images
+      List<ProductImage> fileImages = images.where((img) => img.url.startsWith('/')).toList();
+      List<ProductImage> urlImages = images.where((img) => !img.url.startsWith('/')).toList();
+      
+      if (fileImages.isNotEmpty) {
+        // Use multipart form data for file upload
+        final request = http.MultipartRequest('POST', Uri.parse(baseUrl));
+        
+        // Add authorization header
+        if (token != null) {
+          request.headers['Authorization'] = 'Bearer $token';
+        }
+        
+        // Add form fields
+        request.fields['category'] = category;
+        request.fields['brand'] = brand;
+        request.fields['model'] = model;
+        request.fields['name'] = name;
+        request.fields['price'] = price.toString();
+        request.fields['warranty'] = warranty.toString();
+        request.fields['customerService'] = customerService;
+        request.fields['addedBy'] = addedBy;
+        request.fields['shopName'] = shopName;
+        request.fields['shopAddress'] = shopAddress;
+        request.fields['shopTown'] = shopTown;
+        request.fields['shopLatitude'] = shopLatitude.toString();
+        request.fields['shopLongitude'] = shopLongitude.toString();
+        
+        // Add URL-based images
+        request.fields['imageUrls'] = jsonEncode(urlImages.map((img) => img.url).toList());
+        
+        // Add file images
+        for (int i = 0; i < fileImages.length; i++) {
+          final file = File(fileImages[i].url);
+          if (file.existsSync()) {
+            request.files.add(
+              await http.MultipartFile.fromPath(
+                'images',
+                file.path,
+              ),
+            );
+          }
+        }
+        
+        final response = await request.send();
+        return response.statusCode == 200 || response.statusCode == 201;
+      } else {
+        // Use JSON for URL-only images
+        final response = await ApiClient.post(
+          baseUrl,
+          headers: {
+            "Content-Type": "application/json",
+            if (token != null) "Authorization": "Bearer $token",
+          },
+          body: jsonEncode(toJson()),
+        );
+        return response.statusCode == 200 || response.statusCode == 201;
+      }
     } on ApiException catch (e) {
+      print('Error adding product: $e');
+      rethrow;
+    } catch (e) {
       print('Error adding product: $e');
       rethrow;
     }

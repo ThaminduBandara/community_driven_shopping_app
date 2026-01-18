@@ -10,10 +10,11 @@ const {
   getReviews,
 } = require('../controllers/productController');
 const { protect } = require('../middleware/auth');
+const upload = require('../middleware/upload');
 
 router.route('/')
   .get(getAllProducts)
-  .post(protect, createProduct);
+  .post(protect, upload.array('images', 10), createProduct);
 
 router.route('/:id')
   .get(getProductById)

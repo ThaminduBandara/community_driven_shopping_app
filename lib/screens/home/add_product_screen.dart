@@ -1,6 +1,8 @@
 import 'dart:ui';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
+import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 import '../../providers/product_provider.dart';
 import '../../providers/auth_provider.dart';
 import '../../models/product_image.dart';
@@ -29,6 +31,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
   
   bool _isLoading = false;
   final List<String> _imageUrls = [];
+  final List<File> _imageFiles = [];
+  final ImagePicker _imagePicker = ImagePicker();
 
   @override
   void dispose() {
@@ -49,6 +53,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
 
   Future<void> _handleSubmit() async {
     if (!_formKey.currentState!.validate()) return;
+    
+    if (_imageUrls.isEmpty && _imageFiles.isEmpty) {
+      _showError('Please add at least one image');
+      return;
+    }
 
     setState(() => _isLoading = true);
 
@@ -64,16 +73,27 @@ class _AddProductScreenState extends State<AddProductScreen> {
       
       final productProvider = Provider.of<ProductProvider>(context, listen: false);
       
-      // Create product images list
-      final images = _imageUrls
-          .map((url) => ProductImage(
-                imageId: '',
-                productId: '',
-                url: url,
-                uploadedBy: userId,
-                timestamp: DateTime.now(),
-              ))
-          .toList();
+      // Combine URL images and file images
+      final images = [
+        ..._imageUrls
+            .map((url) => ProductImage(
+                  imageId: '',
+                  productId: '',
+                  url: url,
+                  uploadedBy: userId,
+                  timestamp: DateTime.now(),
+                ))
+            .toList(),
+        ..._imageFiles
+            .map((file) => ProductImage(
+                  imageId: '',
+                  productId: '',
+                  url: file.path,
+                  uploadedBy: userId,
+                  timestamp: DateTime.now(),
+                ))
+            .toList(),
+      ];
 
       final success = await productProvider.addProduct(
         productId: '',
@@ -120,6 +140,44 @@ class _AddProductScreenState extends State<AddProductScreen> {
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(content: Text(message), backgroundColor: Colors.red),
     );
+  }
+
+  Future<void> _pickImageFromComputer() async {
+    try {
+      final XFile? pickedFile = await _imagePicker.pickImage(
+        source: ImageSource.gallery,
+        imageQuality: 85,
+      );
+
+      if (pickedFile != null) {
+        setState(() {
+          _imageFiles.add(File(pickedFile.path));
+        });
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Image added successfully'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 1),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      _showError('Error picking image: $e');
+    }
+  }
+
+  void _removeImageFile(int index) {
+    setState(() {
+      _imageFiles.removeAt(index);
+    });
+  }
+
+  void _removeImageUrl(int index) {
+    setState(() {
+      _imageUrls.removeAt(index);
+    });
   }
 
   void _addImageUrl() {
@@ -199,8 +257,8 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ),
           ),
         ),
-      body: Form(
-        key: _formKey,
+        body: Form(
+          key: _formKey,
         child: ListView(
           padding: const EdgeInsets.all(16),
           children: [
@@ -403,56 +461,256 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ),
             const SizedBox(height: 16),
             
-            if (_imageUrls.isNotEmpty)
-              Wrap(
-                spacing: 8,
-                runSpacing: 8,
-                children: _imageUrls.map((url) {
-                  return Stack(
-                    children: [
-                      ClipRRect(
-                        borderRadius: BorderRadius.circular(8),
-                        child: Image.network(
-                          url,
-                          width: 100,
-                          height: 100,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Container(
+            // Display uploaded file images
+            if (_imageFiles.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Uploaded Images (${_imageFiles.length})',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _imageFiles.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final file = entry.value;
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.file(
+                              file,
                               width: 100,
                               height: 100,
-                              color: Colors.grey[300],
-                              child: const Icon(Icons.error),
-                            );
-                          },
-                        ),
-                      ),
-                      Positioned(
-                        right: 0,
-                        top: 0,
-                        child: IconButton(
-                          icon: const Icon(Icons.close, color: Colors.red),
-                          onPressed: () {
-                            setState(() {
-                              _imageUrls.remove(url);
-                            });
-                          },
-                          style: IconButton.styleFrom(
-                            backgroundColor: Colors.white,
+                              fit: BoxFit.cover,
+                            ),
                           ),
-                        ),
-                      ),
-                    ],
-                  );
-                }).toList(),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed: () => _removeImageFile(index),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
               ),
+            
+            // Display URL images
+            if (_imageUrls.isNotEmpty)
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    'Images from URL (${_imageUrls.length})',
+                    style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                          color: Colors.white,
+                        ),
+                  ),
+                  const SizedBox(height: 8),
+                  Wrap(
+                    spacing: 8,
+                    runSpacing: 8,
+                    children: _imageUrls.asMap().entries.map((entry) {
+                      final index = entry.key;
+                      final url = entry.value;
+                      return Stack(
+                        children: [
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(8),
+                            child: Image.network(
+                              url,
+                              width: 100,
+                              height: 100,
+                              fit: BoxFit.cover,
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  width: 100,
+                                  height: 100,
+                                  color: Colors.grey[300],
+                                  child: const Icon(Icons.error),
+                                );
+                              },
+                            ),
+                          ),
+                          Positioned(
+                            right: 0,
+                            top: 0,
+                            child: IconButton(
+                              icon: const Icon(Icons.close, color: Colors.red),
+                              onPressed: () => _removeImageUrl(index),
+                              style: IconButton.styleFrom(
+                                backgroundColor: Colors.white,
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    }).toList(),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+              ),
+            
+            // Image upload buttons
+            Row(
+              children: [
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.image),
+                    label: const Text('Pick from Computer'),
+                    onPressed: _isLoading ? null : _pickImageFromComputer,
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: OutlinedButton.icon(
+                    icon: const Icon(Icons.link),
+                    label: const Text('Add Image URL'),
+                    onPressed: _isLoading ? null : _addImageUrl,
+                  ),
+                ),
+              ],
+            ),
             
             const SizedBox(height: 16),
             
-            OutlinedButton.icon(
-              onPressed: _addImageUrl,
-              icon: const Icon(Icons.add_photo_alternate),
-              label: const Text('Add Image URL'),
+            if (_imageUrls.isEmpty && _imageFiles.isEmpty)
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.orange.withOpacity(0.15),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(
+                    color: Colors.orange.withOpacity(0.3),
+                  ),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.warning_amber, color: Colors.orange),
+                    const SizedBox(width: 8),
+                    const Expanded(
+                      child: Text(
+                        'Please add at least one image',
+                        style: TextStyle(color: Colors.orange),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            const SizedBox(height: 24),
+            
+            // Shop Details Section
+            Text(
+              'Shop Details',
+              style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    fontWeight: FontWeight.bold,
+                  ),
+            ),
+            const SizedBox(height: 16),
+            
+            TextFormField(
+              controller: _shopNameController,
+              decoration: InputDecoration(
+                labelText: 'Shop Name',
+                prefixIcon: const Icon(Icons.store),
+                hintText: 'Enter shop name',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              validator: (value) => value?.isEmpty ?? true ? 'Shop name is required' : null,
+            ),
+            const SizedBox(height: 16),
+            
+            TextFormField(
+              controller: _shopAddressController,
+              decoration: InputDecoration(
+                labelText: 'Shop Address',
+                prefixIcon: const Icon(Icons.location_on),
+                hintText: 'Enter full address',
+                border: OutlineInputBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
+              ),
+              maxLines: 2,
+              validator: (value) => value?.isEmpty ?? true ? 'Address is required' : null,
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _shopTownController,
+                    decoration: InputDecoration(
+                      labelText: 'Town/City',
+                      prefixIcon: const Icon(Icons.location_city),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    validator: (value) => value?.isEmpty ?? true ? 'Town is required' : null,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 16),
+            
+            Row(
+              children: [
+                Expanded(
+                  child: TextFormField(
+                    controller: _shopLatController,
+                    decoration: InputDecoration(
+                      labelText: 'Latitude',
+                      prefixIcon: const Icon(Icons.map),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) return 'Latitude is required';
+                      if (double.tryParse(value!) == null) return 'Invalid latitude';
+                      return null;
+                    },
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Expanded(
+                  child: TextFormField(
+                    controller: _shopLngController,
+                    decoration: InputDecoration(
+                      labelText: 'Longitude',
+                      prefixIcon: const Icon(Icons.map),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(12),
+                      ),
+                    ),
+                    keyboardType: TextInputType.number,
+                    validator: (value) {
+                      if (value?.isEmpty ?? true) return 'Longitude is required';
+                      if (double.tryParse(value!) == null) return 'Invalid longitude';
+                      return null;
+                    },
+                  ),
+                ),
+              ],
             ),
             const SizedBox(height: 32),
             
@@ -460,7 +718,11 @@ class _AddProductScreenState extends State<AddProductScreen> {
             ElevatedButton(
               onPressed: _isLoading ? null : _handleSubmit,
               style: ElevatedButton.styleFrom(
+                backgroundColor: Colors.deepPurple,
                 padding: const EdgeInsets.symmetric(vertical: 16),
+                shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(12),
+                ),
               ),
               child: _isLoading
                   ? const SizedBox(
@@ -468,12 +730,15 @@ class _AddProductScreenState extends State<AddProductScreen> {
                       width: 20,
                       child: CircularProgressIndicator(strokeWidth: 2),
                     )
-                  : const Text('Add Product', style: TextStyle(fontSize: 16)),
+                  : const Text(
+                      'Add Product',
+                      style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
+                    ),
             ),
           ],
         ),
       ),
-    ),
+      ),
     );
   }
 }
