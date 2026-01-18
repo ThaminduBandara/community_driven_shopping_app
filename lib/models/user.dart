@@ -6,33 +6,40 @@ class User {
   String username;
   String email;
   String passwordHash;
+  String? token;
 
   User({
     required this.userId,
     required this.username,
     required this.email,
     required this.passwordHash,
+    this.token,
   });
 
-  static const String baseUrl = "http://localhost:9090/api/users";
+  static const String baseUrl = "http://localhost:8080/api/users";
 
-  
+  // Signup
   Future<bool> signup() async {
     final response = await http.post(
       Uri.parse("$baseUrl/signup"),
       headers: {"Content-Type": "application/json"},
       body: jsonEncode({
-        "userId": userId,
         "username": username,
         "email": email,
-        "passwordHash": passwordHash,
+        "password": passwordHash,
       }),
     );
 
-    return response.statusCode == 201;
+    if (response.statusCode == 201 || response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+      userId = data['userId'];
+      token = data['token'];
+      return true;
+    }
+    return false;
   }
 
-  
+  // Login
   static Future<User?> login(String email, String password) async {
     final response = await http.post(
       Uri.parse("$baseUrl/login"),
@@ -46,7 +53,8 @@ class User {
         userId: data['userId'],
         username: data['username'],
         email: data['email'],
-        passwordHash: data['passwordHash'],
+        passwordHash: data['passwordHash'] ?? '',
+        token: data['token'],
       );
     } else {
       return null;
