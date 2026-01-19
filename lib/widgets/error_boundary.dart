@@ -41,7 +41,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
   Widget build(BuildContext context) {
     if (_error != null) {
       return Scaffold(
-        backgroundColor: const Color(0xFF1a1a2e),
+        backgroundColor: const Color(0xFF0D1B2A),
         body: Center(
           child: Padding(
             padding: const EdgeInsets.all(24.0),
@@ -88,7 +88,7 @@ class _ErrorBoundaryState extends State<ErrorBoundary> {
                   child: const Text(
                     'Try Again',
                     style: TextStyle(
-                      color: Color(0xFF1a1a2e),
+                      color: Color(0xFF0D1B2A),
                       fontWeight: FontWeight.bold,
                     ),
                   ),

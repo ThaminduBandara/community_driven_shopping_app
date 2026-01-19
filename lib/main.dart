@@ -26,7 +26,7 @@ class MyApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.deepPurple,
+                seedColor: const Color(0xFF0D1B2A),
                 brightness: Brightness.dark,
               ),
               useMaterial3: true,
@@ -59,7 +59,7 @@ class MyApp extends StatelessWidget {
                 ),
                 focusedBorder: OutlineInputBorder(
                   borderRadius: BorderRadius.circular(16),
-                  borderSide: const BorderSide(color: Colors.deepPurpleAccent, width: 2),
+                  borderSide: const BorderSide(color: Color(0xFF0D1B2A), width: 2),
                 ),
                 filled: true,
                 fillColor: Colors.white.withOpacity(0.05),

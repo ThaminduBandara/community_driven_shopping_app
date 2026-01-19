@@ -130,7 +130,7 @@ class _AddProductScreenState extends State<AddProductScreen> {
         return BackdropFilter(
           filter: ImageFilter.blur(sigmaX: 10, sigmaY: 10),
           child: AlertDialog(
-            backgroundColor: const Color(0xFF1a1a2e).withOpacity(0.9),
+            backgroundColor: const Color(0xFF0D1B2A).withOpacity(0.9),
             shape: RoundedRectangleBorder(
               borderRadius: BorderRadius.circular(20),
               side: BorderSide(
@@ -177,9 +177,9 @@ class _AddProductScreenState extends State<AddProductScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1a1a2e),
-            Color(0xFF16213e),
-            Color(0xFF0f3460),
+            Color(0xFF0D1B2A),
+            Color(0xFF0A1520),
+            Color(0xFF050E1A),
           ],
         ),
       ),

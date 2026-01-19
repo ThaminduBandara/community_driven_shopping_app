@@ -145,8 +145,8 @@ class _HomeScreenState extends State<HomeScreen> {
                       begin: Alignment.topLeft,
                       end: Alignment.bottomRight,
                       colors: [
-                        const Color(0xFF1a1a2e).withOpacity(0.9),
-                        const Color(0xFF16213e).withOpacity(0.9),
+                        const Color(0xFF0D1B2A).withOpacity(0.9),
+                        const Color(0xFF0A1520).withOpacity(0.9),
                       ],
                     ),
                     border: Border.all(
@@ -350,9 +350,9 @@ class _HomeScreenState extends State<HomeScreen> {
           begin: Alignment.topLeft,
           end: Alignment.bottomRight,
           colors: [
-            Color(0xFF1a1a2e),
-            Color(0xFF16213e),
-            Color(0xFF0f3460),
+            Color(0xFF0D1B2A),
+            Color(0xFF0A1520),
+            Color(0xFF050E1A),
           ],
         ),
       ),
@@ -441,8 +441,8 @@ class _HomeScreenState extends State<HomeScreen> {
             decoration: BoxDecoration(
               gradient: LinearGradient(
                 colors: [
-                  Colors.deepPurple.withOpacity(0.7),
-                  Colors.deepPurpleAccent.withOpacity(0.7),
+                  const Color(0xFF0D1B2A).withOpacity(0.7),
+                  const Color(0xFF0A1520).withOpacity(0.7),
                 ],
               ),
               borderRadius: BorderRadius.circular(30),
